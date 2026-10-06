@@ -9,7 +9,6 @@ src-tauri/gen/
 .DS_Store
 /tmp/
 src-tauri/icons/*.icns
-src-tauri/icons/*.ico
 .idea/
 .vscode/
 *.swp
