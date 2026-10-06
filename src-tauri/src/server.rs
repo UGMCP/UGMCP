@@ -2,14 +2,20 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use serde::Serialize;
 use serde_json::{json, Value};
 
+use crate::auth::AuthService;
+use crate::config::PryselConfig;
+use crate::connection::ConnectionService;
+use crate::control::{ControlHub, MCP_ADDR};
 use crate::error::AppError;
+use crate::mcp_host::{self, McpGuard};
+use crate::storage::Storage;
 use crate::system::{detect_shell, host_identity};
 use crate::terminal::{CreateTerminalRequest, TerminalManager};
 
@@ -168,8 +174,9 @@ impl Drop for Running {
 }
 
 struct Shared {
-    terminals: TerminalManager,
+    terminals: Arc<TerminalManager>,
     token: String,
+    mcp: Mutex<Option<McpGuard>>,
 }
 
 fn start(bind: &str, token: String) -> Result<Running, String> {
@@ -211,9 +218,32 @@ fn is_loopback(ip: IpAddr) -> bool {
 }
 
 fn accept_loop(listener: TcpListener, stop: Arc<AtomicBool>, token: String) {
+    let terminals = Arc::new(TerminalManager::new());
+    let config = PryselConfig::load();
+    let storage = Arc::new(Storage::open());
+    let auth = Arc::new(AuthService::new(config.clone(), storage.clone()));
+    let connection = Arc::new(ConnectionService::new());
+    let hub = Arc::new(ControlHub::new(
+        terminals.clone(),
+        storage,
+        auth,
+        connection,
+        config,
+    ));
+    let mcp = match mcp_host::bind(hub, MCP_ADDR) {
+        Ok(guard) => {
+            log::info!("Unit Agent MCP listening on {}", guard.addr);
+            Some(guard)
+        }
+        Err(err) => {
+            log::warn!("MCP unavailable: {err}. Terminals remain available.");
+            None
+        }
+    };
     let shared = Arc::new(Shared {
-        terminals: TerminalManager::new(),
+        terminals,
         token,
+        mcp: Mutex::new(mcp),
     });
     while !stop.load(Ordering::SeqCst) {
         match listener.accept() {
@@ -230,6 +260,9 @@ fn accept_loop(listener: TcpListener, stop: Arc<AtomicBool>, token: String) {
                 break;
             }
         }
+    }
+    if let Ok(mut guard) = shared.mcp.lock() {
+        drop(guard.take());
     }
     shared.terminals.shutdown();
 }

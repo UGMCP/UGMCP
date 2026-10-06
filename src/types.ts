@@ -67,7 +67,52 @@ export interface Settings {
     args: string[];
     autoStart: boolean;
   }>;
+  aiMcp: boolean;
+  aiPermission: string;
+  aiScreenshots: boolean;
+  aiClipboard: boolean;
 }
+
+export interface AiClient {
+  sessionId: string;
+  client: string;
+  connectedAt: number;
+  permission: string;
+  paused: boolean;
+}
+
+export interface AiActivityEntry {
+  at: number;
+  client: string;
+  action: string;
+  workspace: string;
+  status: string;
+}
+
+export interface AiStatus {
+  name: string;
+  permission: string;
+  emergencyStop: boolean;
+  mcpRunning: boolean;
+  mcpEndpoint: string;
+  remote: boolean;
+  clients: AiClient[];
+  workspaces: number;
+}
+
+export interface AiConfirmRequest {
+  id: string;
+  client: string;
+  action: string;
+  workspace: string;
+  command: string;
+}
+
+export type ControlEvent =
+  | { type: "workspace"; info: TerminalInfo; focus: boolean }
+  | { type: "confirm"; id: string; client: string; action: string; workspace: string; command: string }
+  | { type: "activity"; entry: AiActivityEntry }
+  | { type: "status" };
 
 export interface TerminalInfo {
   id: string;

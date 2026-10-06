@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   AgentStatus,
+  AiActivityEntry,
+  AiStatus,
   AppError,
   AppInfo,
   ConnectionSnapshot,
@@ -76,4 +78,9 @@ export const api = {
   appInfo: () => call<AppInfo>("app_info"),
   debugInfo: () => call<DebugInfo>("debug_info"),
   agentStatus: () => call<{ local: AgentStatus; prysel: AgentStatus }>("agent_status"),
+  aiStatus: () => call<AiStatus>("ai_status"),
+  aiActivity: () => call<AiActivityEntry[]>("ai_activity"),
+  aiConfirm: (id: string, allow: boolean) => call<void>("ai_confirm", { id, allow }),
+  aiEmergencyStop: () => call<void>("ai_emergency_stop"),
+  aiResumeControl: () => call<void>("ai_resume_control"),
 };

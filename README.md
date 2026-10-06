@@ -150,6 +150,14 @@ Commands such as `rm -rf /`, disk formatting, shutdown, and package removal ask 
 
 The services panel (mcp) connects to a local MCP server over stdio using newline-delimited JSON-RPC, protocol `2024-11-05`. Unit Agent initializes the server, lists tools, and calls a tool only after you press Run. Tool arguments that look destructive need a second confirmation.
 
+Unit Agent is also an MCP server. The desktop listens on `127.0.0.1:47823` and shares its terminals with AI clients. Point Claude or Codex at:
+
+```bash
+unit-agent mcp
+```
+
+That process attaches to the desktop when it is running. The AI chip in the title bar opens a small activity drawer. Allow and Deny cover commands that need confirmation. Stop AI control rejects new AI actions and leaves the shells running. See [docs/mcp.md](docs/mcp.md) and [docs/ai-control.md](docs/ai-control.md).
+
 MCP server definitions, including environment variables you type, are stored in the settings file with mode `0600` on Unix. They are not uploaded.
 
 ## Data on disk

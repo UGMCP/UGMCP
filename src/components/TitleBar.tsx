@@ -11,6 +11,10 @@ interface Props {
   desktop: boolean;
   onToggleTheme: () => void;
   onOpenServices: () => void;
+  onOpenAi: () => void;
+  aiLabel: string;
+  aiLive: boolean;
+  aiStopped: boolean;
   onLogout: () => void;
   onSignIn: () => void;
   onAbout: () => void;
@@ -23,6 +27,10 @@ export function TitleBar({
   desktop,
   onToggleTheme,
   onOpenServices,
+  onOpenAi,
+  aiLabel,
+  aiLive,
+  aiStopped,
   onLogout,
   onSignIn,
   onAbout,
@@ -66,6 +74,13 @@ export function TitleBar({
         <>
           <button className="icon-btn" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={onToggleTheme}>
             {theme === "dark" ? "light" : "dark"}
+          </button>
+          <button
+            className={`text-btn ai-chip${aiLive ? " live" : ""}${aiStopped ? " stopped" : ""}`}
+            aria-label="AI control"
+            onClick={onOpenAi}
+          >
+            {aiLabel}
           </button>
           <button className="text-btn" aria-label="MCP servers" onClick={onOpenServices}>
             mcp

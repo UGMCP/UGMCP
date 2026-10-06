@@ -3,8 +3,10 @@ mod auth;
 mod commands;
 mod config;
 mod connection;
+mod control;
 mod error;
 mod mcp;
+mod mcp_host;
 mod safety;
 mod server;
 mod state;
@@ -13,6 +15,7 @@ mod system;
 mod terminal;
 mod util;
 
+pub use mcp_host::{cli, mcp_main, CLI_HELP};
 pub use server::serve;
 
 use std::time::Duration;
@@ -87,6 +90,11 @@ pub fn run() {
             commands::debug_info,
             commands::agent_status,
             commands::host_identity,
+            commands::ai_status,
+            commands::ai_activity,
+            commands::ai_confirm,
+            commands::ai_emergency_stop,
+            commands::ai_resume_control,
         ])
         .build(tauri::generate_context!())
         .expect("failed to start Unit Agent")

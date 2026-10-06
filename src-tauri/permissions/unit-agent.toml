@@ -29,4 +29,9 @@ commands.allow = [
   "debug_info",
   "agent_status",
   "host_identity",
+  "ai_status",
+  "ai_activity",
+  "ai_confirm",
+  "ai_emergency_stop",
+  "ai_resume_control",
 ]

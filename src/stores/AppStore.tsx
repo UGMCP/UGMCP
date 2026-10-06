@@ -2,7 +2,18 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, asAppError } from "../services/api";
-import type { ConnectionSnapshot, Phase, SessionView, Settings, TerminalInfo, ThemeName } from "../types";
+import type {
+  AiActivityEntry,
+  AiClient,
+  AiConfirmRequest,
+  ConnectionSnapshot,
+  ControlEvent,
+  Phase,
+  SessionView,
+  Settings,
+  TerminalInfo,
+  ThemeName,
+} from "../types";
 import { emptyConnection, emptySession } from "../types";
 import { resolvePhase } from "../utils/startup";
 
@@ -19,6 +30,11 @@ interface Store {
   generations: Record<string, number>;
   servicesOpen: boolean;
   aboutOpen: boolean;
+  aiOpen: boolean;
+  aiClients: AiClient[];
+  aiActivity: AiActivityEntry[];
+  aiStopped: boolean;
+  aiConfirm: AiConfirmRequest | null;
   notice: string | null;
   signIn: () => void;
   cancelSignIn: () => void;
@@ -33,6 +49,10 @@ interface Store {
   toggleTheme: () => void;
   toggleServices: () => void;
   toggleAbout: () => void;
+  toggleAi: () => void;
+  confirmAi: (allow: boolean) => void;
+  stopAi: () => void;
+  resumeAi: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   reportError: (message: string) => void;
 }
@@ -50,6 +70,10 @@ const fallbackSettings = (): Settings => ({
   activeWorkspace: null,
   window: { width: 1280, height: 800, x: null, y: null, maximized: false },
   mcpServers: [],
+  aiMcp: true,
+  aiPermission: "confirm",
+  aiScreenshots: false,
+  aiClipboard: false,
 });
 
 function applyTheme(theme: ThemeName) {
@@ -74,6 +98,11 @@ export function AppStore({ children }: { children: ReactNode }) {
   const [generations, setGenerations] = useState<Record<string, number>>({});
   const [servicesOpen, setServicesOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiClients, setAiClients] = useState<AiClient[]>([]);
+  const [aiActivity, setAiActivity] = useState<AiActivityEntry[]>([]);
+  const [aiStopped, setAiStopped] = useState(false);
+  const [aiConfirm, setAiConfirm] = useState<AiConfirmRequest | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const reportError = useCallback((message: string) => {
@@ -128,6 +157,42 @@ export function AppStore({ children }: { children: ReactNode }) {
     let unlisten: (() => void) | undefined;
     void listen<ConnectionSnapshot>("connection-changed", (event) => {
       if (event.payload) setConnection(event.payload);
+    }).then((stop) => {
+      unlisten = stop;
+    });
+    return () => unlisten?.();
+  }, []);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void listen<ControlEvent>("control-event", (event) => {
+      const payload = event.payload;
+      if (!payload) return;
+      if (payload.type === "workspace") {
+        setWorkspaces((current) => {
+          const existing = current.find((item) => item.id === payload.info.id);
+          if (!existing) return [...current, payload.info];
+          return current.map((item) => (item.id === payload.info.id ? payload.info : item));
+        });
+        if (payload.focus) setActiveId(payload.info.id);
+      } else if (payload.type === "confirm") {
+        setAiConfirm({
+          id: payload.id,
+          client: payload.client,
+          action: payload.action,
+          workspace: payload.workspace,
+          command: payload.command,
+        });
+        setAiOpen(true);
+      } else if (payload.type === "activity") {
+        setAiActivity((current) => [payload.entry, ...current].slice(0, 40));
+        if (payload.entry.status === "notice") setNotice(payload.entry.action);
+      } else if (payload.type === "status") {
+        void api.aiStatus().then((status) => {
+          setAiClients(status.clients ?? []);
+          setAiStopped(Boolean(status.emergencyStop));
+        }).catch(() => undefined);
+      }
     }).then((stop) => {
       unlisten = stop;
     });
@@ -260,6 +325,28 @@ export function AppStore({ children }: { children: ReactNode }) {
     }).catch((error: unknown) => reportError(asAppError(error).message));
   }, [reportError]);
 
+  const confirmAi = useCallback((allow: boolean) => {
+    setAiConfirm((current) => {
+      if (current) void api.aiConfirm(current.id, allow).catch(() => undefined);
+      return null;
+    });
+  }, []);
+
+  const stopAi = useCallback(() => {
+    void api.aiEmergencyStop().then(() => {
+      setAiStopped(true);
+      setAiClients([]);
+      setNotice("AI control disabled. Terminals keep running.");
+    }).catch((error: unknown) => reportError(asAppError(error).message));
+  }, [reportError]);
+
+  const resumeAi = useCallback(() => {
+    void api.aiResumeControl().then(() => {
+      setAiStopped(false);
+      setNotice("AI control is available again.");
+    }).catch((error: unknown) => reportError(asAppError(error).message));
+  }, [reportError]);
+
   const toggleTheme = useCallback(() => {
     const next: ThemeName = (settings?.theme ?? "dark") === "dark" ? "light" : "dark";
     applyTheme(next);
@@ -309,6 +396,11 @@ export function AppStore({ children }: { children: ReactNode }) {
     generations,
     servicesOpen,
     aboutOpen,
+    aiOpen,
+    aiClients,
+    aiActivity,
+    aiStopped,
+    aiConfirm,
     notice,
     signIn,
     cancelSignIn,
@@ -323,12 +415,24 @@ export function AppStore({ children }: { children: ReactNode }) {
     toggleTheme,
     toggleServices: () => setServicesOpen((open) => !open),
     toggleAbout: () => setAboutOpen((open) => !open),
+    toggleAi: () => {
+      setAiOpen((open) => !open);
+      void api.aiStatus().then((status) => {
+        setAiClients(status.clients ?? []);
+        setAiStopped(Boolean(status.emergencyStop));
+      }).catch(() => undefined);
+      void api.aiActivity().then(setAiActivity).catch(() => undefined);
+    },
+    confirmAi,
+    stopAi,
+    resumeAi,
     updateSettings,
     reportError,
   }), [
     phase, fatalMessage, authBusy, authError, session, connection, settings, workspaces, activeId,
-    generations, servicesOpen, aboutOpen, notice, signIn, cancelSignIn, workOffline, logout, boot,
-    createWorkspace, focusWorkspace, noteCwd, removeWorkspace, noteRestart, toggleTheme, updateSettings, reportError,
+    generations, servicesOpen, aboutOpen, aiOpen, aiClients, aiActivity, aiStopped, aiConfirm, notice,
+    signIn, cancelSignIn, workOffline, logout, boot, createWorkspace, focusWorkspace, noteCwd,
+    removeWorkspace, noteRestart, toggleTheme, updateSettings, reportError, confirmAi, stopAi, resumeAi,
   ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

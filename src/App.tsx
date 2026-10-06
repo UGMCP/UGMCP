@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AiPanel } from "./components/AiPanel";
 import { Desktop } from "./components/Desktop";
 import { LoginScreen } from "./components/LoginScreen";
 import { ServicesPanel } from "./components/ServicesPanel";
@@ -12,6 +13,13 @@ function Shell() {
   const theme = app.settings?.theme ?? "dark";
   const [about, setAbout] = useState<AppInfo | null>(null);
   const [debug, setDebug] = useState<DebugInfo | null>(null);
+  const aiLabel = app.aiStopped
+    ? "AI off"
+    : app.aiClients.length === 1
+      ? `AI ${app.aiClients[0].client}`
+      : app.aiClients.length > 1
+        ? `AI ${app.aiClients.length}`
+        : "AI";
 
   useEffect(() => {
     if (!app.aboutOpen) return;
@@ -32,6 +40,10 @@ function Shell() {
         desktop={app.phase === "desktop"}
         onToggleTheme={app.toggleTheme}
         onOpenServices={app.toggleServices}
+        onOpenAi={app.toggleAi}
+        aiLabel={aiLabel}
+        aiLive={app.aiClients.length > 0 && !app.aiStopped}
+        aiStopped={app.aiStopped}
         onLogout={app.logout}
         onSignIn={app.signIn}
         onAbout={app.toggleAbout}
@@ -89,6 +101,20 @@ function Shell() {
             onClosed={app.removeWorkspace}
             onRestarted={app.noteRestart}
             onError={app.reportError}
+          />
+        ) : null}
+        {app.aiOpen && app.settings && app.phase === "desktop" ? (
+          <AiPanel
+            settings={app.settings}
+            clients={app.aiClients}
+            activity={app.aiActivity}
+            stopped={app.aiStopped}
+            confirm={app.aiConfirm}
+            onClose={app.toggleAi}
+            onSettings={app.updateSettings}
+            onConfirm={app.confirmAi}
+            onStop={app.stopAi}
+            onResume={app.resumeAi}
           />
         ) : null}
         {app.servicesOpen && app.settings ? (

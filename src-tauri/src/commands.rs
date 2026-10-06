@@ -7,6 +7,7 @@ use crate::agent::{AgentStatus, LocalAgentService};
 use crate::auth::SessionView;
 use crate::config::PublicConfig;
 use crate::connection::ConnectionSnapshot;
+use crate::control::{ActivityEntry, Level};
 use crate::error::AppError;
 use crate::mcp::McpServerInfo;
 use crate::state::AppState;
@@ -212,7 +213,39 @@ pub fn settings_update(
     state: State<'_, AppState>,
     patch: SettingsPatch,
 ) -> Result<Settings, AppError> {
-    state.storage.update_settings(patch)
+    let settings = state.storage.update_settings(patch.clone())?;
+    if patch.ai_permission.is_some() {
+        state.hub.set_level(Level::parse(&settings.ai_permission));
+    }
+    if patch.ai_mcp.is_some() {
+        state.hub.set_mcp_enabled(settings.ai_mcp);
+    }
+    Ok(settings)
+}
+
+#[tauri::command]
+pub fn ai_status(state: State<'_, AppState>) -> Value {
+    state.hub.status_value()
+}
+
+#[tauri::command]
+pub fn ai_activity(state: State<'_, AppState>) -> Vec<ActivityEntry> {
+    state.hub.activity()
+}
+
+#[tauri::command]
+pub fn ai_confirm(state: State<'_, AppState>, id: String, allow: bool) {
+    state.hub.resolve_confirm(&id, allow);
+}
+
+#[tauri::command]
+pub fn ai_emergency_stop(state: State<'_, AppState>) {
+    state.hub.emergency_stop();
+}
+
+#[tauri::command]
+pub fn ai_resume_control(state: State<'_, AppState>) {
+    state.hub.clear_emergency();
 }
 
 #[tauri::command]

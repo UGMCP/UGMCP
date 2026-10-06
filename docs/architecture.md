@@ -37,6 +37,8 @@ Dark is the default. Light mode is stored in settings and mirrored to `localStor
 ```
 src-tauri/src
 ├── lib.rs            window, command registration, connectivity loop
+├── control.rs        shared control API used by the UI, CLI, and MCP
+├── mcp_host.rs       local MCP server on 127.0.0.1:47823
 ├── server.rs         headless HTTP server (unit-agent-server)
 ├── commands.rs       Tauri IPC
 ├── terminal.rs       PTY sessions
@@ -99,9 +101,15 @@ AuthService
 
 `LocalAgentService` reports the detected shell. It does not pretend a local model is installed.
 
-### MCP
+### MCP client
 
-`McpManager` spawns a process with stdin/stdout pipes, sends `initialize`, `notifications/initialized`, and `tools/list`, then `tools/call` after the UI sets `confirmed`. Messages are one JSON object per line. Server environment variables stay in the local settings file.
+`McpManager` spawns a process with stdin/stdout pipes, sends `initialize`, `notifications/initialized`, and `tools/list`, then `tools/call` after the UI sets `confirmed`. Messages are one JSON object per line. Server environment variables stay in the local settings file. That client is unchanged: Unit Agent can still call tools on other local MCP servers.
+
+### MCP server and control API
+
+The desktop process also exposes Unit Agent itself as an MCP server. `ControlHub` owns no second terminal pool. It holds the same `Arc<TerminalManager>` as the window. `unit-agent mcp` attaches to `127.0.0.1:47823` when the desktop is up, so Claude, Codex, and other MCP clients type into those PTYs. If nothing is listening, stdio mode starts a separate headless hub and says so; those PTYs are not the window's.
+
+Remote bind addresses are rejected. See [mcp.md](mcp.md), [ai-control.md](ai-control.md), and [tools.md](tools.md).
 
 ## Persistence
 
@@ -111,4 +119,4 @@ The session record is the profile returned by the token exchange plus an expiry.
 
 ## Shutdown
 
-On window exit the app cancels an in-progress login, stops MCP children, and hangs up terminal shells. Workspace metadata stays on disk.
+On window exit the app cancels an in-progress login, stops the local MCP listener, stops MCP client children, and hangs up terminal shells it started. Workspace metadata stays on disk. An AI client disconnecting does not hang up those shells.

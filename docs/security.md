@@ -60,3 +60,17 @@ Debug mode can show connection state, workspace ids, process ids, the applicatio
 ## Application permissions
 
 The package runs as a normal desktop user. Installation of a `.deb` may require privileges; running Unit Agent does not.
+
+## AI control
+
+Local MCP authorization is separate from Prysel login. Prysel authenticates the person. The MCP permission level decides what an AI may do on this computer. The default is `confirm`. `full-control` is never the default, and destructive commands still ask even then.
+
+The listener is `127.0.0.1:47823`. `0.0.0.0` is rejected in code. There is no remote-control switch that opens a public socket in this version.
+
+AI writes go through the same PTY and the same line guard as the keyboard. A denied confirmation is not written. Secret paths (`.env`, private keys, `~/.ssh/id_rsa`, `id_ed25519`, `id_ecdsa`, `.pem` private keys) are refused. Paths that escape the workspace root are refused unless the level is full control, and secret paths stay refused at every level. Returned text replaces likely tokens with `[REDACTED]`.
+
+Clipboard and screenshot tools stay denied. This build does not capture them even if the settings flag is turned on. There is no camera, microphone, or mouse control.
+
+Text inside a repository or a terminal is not treated as an instruction. Only a tool call that passes the permission check runs.
+
+Audit rows keep the client, tool, workspace, and result. They do not keep passwords or tokens. Disconnecting an AI session unlocks its workspace and leaves the shell running. Stop AI control rejects new actions and does not close terminals.

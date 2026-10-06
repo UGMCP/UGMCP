@@ -84,6 +84,18 @@ pub struct Settings {
     pub window: WindowSettings,
     #[serde(default)]
     pub mcp_servers: Vec<SavedMcp>,
+    #[serde(default = "default_true")]
+    pub ai_mcp: bool,
+    #[serde(default = "default_permission")]
+    pub ai_permission: String,
+    #[serde(default)]
+    pub ai_screenshots: bool,
+    #[serde(default)]
+    pub ai_clipboard: bool,
+}
+
+fn default_permission() -> String {
+    "confirm".into()
 }
 
 fn default_theme() -> String {
@@ -111,6 +123,10 @@ impl Default for Settings {
             active_workspace: None,
             window: WindowSettings::default(),
             mcp_servers: Vec::new(),
+            ai_mcp: true,
+            ai_permission: default_permission(),
+            ai_screenshots: false,
+            ai_clipboard: false,
         }
     }
 }
@@ -126,6 +142,10 @@ pub struct SettingsPatch {
     pub restore_workspaces: Option<bool>,
     pub active_workspace: Option<String>,
     pub window: Option<WindowSettings>,
+    pub ai_mcp: Option<bool>,
+    pub ai_permission: Option<String>,
+    pub ai_screenshots: Option<bool>,
+    pub ai_clipboard: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -168,10 +188,14 @@ pub struct Storage {
 
 impl Storage {
     pub fn open() -> Self {
-        let settings_path = config_dir().join("settings.json");
-        let session_path = data_dir().join("session.bin");
-        let _ = fs::create_dir_all(config_dir());
-        let _ = fs::create_dir_all(data_dir());
+        Self::open_in(config_dir(), data_dir())
+    }
+
+    pub fn open_in(config: PathBuf, data: PathBuf) -> Self {
+        let _ = fs::create_dir_all(&config);
+        let _ = fs::create_dir_all(&data);
+        let settings_path = config.join("settings.json");
+        let session_path = data.join("session.bin");
         let settings = read_settings(&settings_path).unwrap_or_default();
         Self {
             settings_path,
@@ -223,6 +247,23 @@ impl Storage {
         }
         if let Some(window) = patch.window {
             settings.window = window;
+        }
+        if let Some(enabled) = patch.ai_mcp {
+            settings.ai_mcp = enabled;
+        }
+        if let Some(permission) = patch.ai_permission {
+            if matches!(
+                permission.as_str(),
+                "read-only" | "safe" | "confirm" | "full-control"
+            ) {
+                settings.ai_permission = permission;
+            }
+        }
+        if let Some(screenshots) = patch.ai_screenshots {
+            settings.ai_screenshots = screenshots;
+        }
+        if let Some(clipboard) = patch.ai_clipboard {
+            settings.ai_clipboard = clipboard;
         }
         self.write_settings(&settings)?;
         Ok(settings.clone())
@@ -603,6 +644,10 @@ mod tests {
                 restore_workspaces: Some(false),
                 active_workspace: None,
                 window: None,
+                ai_mcp: None,
+                ai_permission: None,
+                ai_screenshots: None,
+                ai_clipboard: None,
             })
             .unwrap();
         assert_eq!(updated.theme, "light");
