@@ -1,0 +1,50 @@
+[package]
+name = "unit-agent"
+version = "0.1.0"
+description = "Unit Agent local-first desktop workspace and headless server"
+authors = ["Prysel"]
+edition = "2021"
+rust-version = "1.77"
+license = "UNLICENSED"
+
+[lib]
+name = "unit_agent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "unit-agent"
+path = "src/main.rs"
+
+[[bin]]
+name = "unit-agent-server"
+path = "src/server_main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.2", features = [] }
+
+[dependencies]
+tauri = { version = "2.2", features = ["image-png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
+portable-pty = "0.8"
+keyring = "3"
+aes-gcm = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+url = "2"
+log = "0.4"
+env_logger = "0.11"
+dirs = "5"
+libc = "0.2"
+open = "5"
+uuid = { version = "1", features = ["v4", "serde"] }
+tokio = { version = "1", features = ["time"] }
+ctrlc = "3.4"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

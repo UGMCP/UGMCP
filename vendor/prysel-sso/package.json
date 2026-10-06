@@ -1,0 +1,18 @@
+{
+  "name": "@prysel/sso",
+  "version": "1.0.0",
+  "description": "Prysel SSO SDK for Next.js and other applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["prysel", "sso", "auth", "oauth"],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "files": ["dist"]
+}

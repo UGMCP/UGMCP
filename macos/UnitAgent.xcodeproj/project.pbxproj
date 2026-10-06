@@ -1,0 +1,130 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXFileReference section */
+		E1A10000000000000000000C /* xcode-build-mac.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "xcode-build-mac.sh"; path = ../scripts/xcode-build-mac.sh; sourceTree = "<group>"; };
+		E1A10000000000000000000D /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		E1A100000000000000000005 = {
+			isa = PBXGroup;
+			children = (
+				E1A10000000000000000000D /* project.yml */,
+				E1A10000000000000000000C /* xcode-build-mac.sh */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		E1A100000000000000000001 /* Unit Agent */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(SRCROOT)/../scripts/xcode-build-mac.sh";
+			buildConfigurationList = E1A100000000000000000002 /* Build configuration list for PBXLegacyTarget "Unit Agent" */;
+			buildPhases = (
+			);
+			buildToolPath = /bin/bash;
+			buildWorkingDirectory = "$(SRCROOT)/..";
+			dependencies = (
+			);
+			name = "Unit Agent";
+			passBuildSettingsInEnvironment = 1;
+			productName = "Unit Agent";
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		E1A100000000000000000003 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = E1A100000000000000000004 /* Build configuration list for PBXProject "UnitAgent" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E1A100000000000000000005;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E1A100000000000000000001 /* Unit Agent */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		E1A100000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.prysel.unitagent;
+				PRODUCT_NAME = "Unit Agent";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		E1A100000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.prysel.unitagent;
+				PRODUCT_NAME = "Unit Agent";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		E1A100000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		E1A10000000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E1A100000000000000000002 /* Build configuration list for PBXLegacyTarget "Unit Agent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A100000000000000000007 /* Debug */,
+				E1A100000000000000000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1A100000000000000000004 /* Build configuration list for PBXProject "UnitAgent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A100000000000000000009 /* Debug */,
+				E1A10000000000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E1A100000000000000000003 /* Project object */;
+}
