@@ -17,7 +17,7 @@ export default defineConfig({
     target: "es2021",
     minify: "esbuild",
     sourcemap: false,
-    outDir: "dist",
+    outDir: "dist-web",
   },
   test: {
     environment: "node",

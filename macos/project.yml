@@ -1,0 +1,24 @@
+name: UnitAgent
+options:
+  bundleIdPrefix: com.prysel
+  deploymentTarget:
+    macOS: "10.15"
+settings:
+  MARKETING_VERSION: "0.1.0"
+  CURRENT_PROJECT_VERSION: "0.1.0"
+targets:
+  Unit Agent:
+    type: ""
+    platform: macOS
+    legacy:
+      toolPath: /bin/bash
+      arguments: "$(SRCROOT)/../scripts/xcode-build-mac.sh"
+      workingDirectory: "$(SRCROOT)/.."
+      passSettings: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.prysel.unitagent
+      PRODUCT_NAME: Unit Agent
+      MACOSX_DEPLOYMENT_TARGET: "10.15"
+    scheme:
+      management:
+        shared: true

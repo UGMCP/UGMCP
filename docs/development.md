@@ -10,6 +10,8 @@ npm run clippy
 
 `npm run dev` opens the window. The debug build expects Vite on `http://localhost:1420`.
 
+`npm run build:web` writes the frontend to `dist-web/`. Installer commands copy finished packages to `dist/`. See [installers.md](installers.md).
+
 ## Control API
 
 Version `1`. MCP protocol `2024-11-05`.

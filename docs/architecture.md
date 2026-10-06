@@ -111,6 +111,10 @@ The desktop process also exposes Unit Agent itself as an MCP server. `ControlHub
 
 Remote bind addresses are rejected. See [mcp.md](mcp.md), [ai-control.md](ai-control.md), and [tools.md](tools.md).
 
+## Installers
+
+Tauri bundles the same binary for the host operating system. `npm run build:mac` writes `dist/Unit-Agent.dmg` and a zipped `.app`. `npm run build:win` writes `dist/Unit-Agent-Setup.exe`. The macOS project at `macos/UnitAgent.xcodeproj` calls that macOS command. Details, including signing variables, are in [installers.md](installers.md).
+
 ## Persistence
 
 Non-secret settings (theme, font size, window geometry, workspace ids and directories, MCP command lines) are JSON in the OS config directory.

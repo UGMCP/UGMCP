@@ -95,15 +95,20 @@ npm run serve -- --help
 
 ## Production build
 
+The commands below compile the existing Tauri app and copy the installer into `dist/`. They run on the operating system they package. A Mac produces the disk image. Windows produces the setup wizard. Linux produces Linux packages.
+
 ```bash
-npm run build
+npm run build:mac   # dist/Unit-Agent.dmg and dist/Unit-Agent-mac.zip
+npm run build:win   # dist/Unit-Agent-Setup.exe
+npm run build:all   # the packages for the machine you are on
 ```
 
-Tauri bundles for the operating system you build on (`bundle.targets` is `all`):
+People installing Unit Agent do not use these commands, Node.js, or a terminal.
 
-- Linux: `deb`, AppImage, and `rpm` under `src-tauri/target/release/bundle/`
-- macOS: `.app` and `.dmg`
-- Windows: NSIS and MSI
+- macOS: open `Unit-Agent.dmg`, drag Unit Agent onto Applications, eject the disk, and open it from Launchpad, Finder, Spotlight, or `/Applications`.
+- Windows: open `Unit-Agent-Setup.exe`, choose a folder if you want, install, and launch it from the Start menu. The last page can add a desktop shortcut.
+
+`macos/UnitAgent.xcodeproj` builds the same macOS app. Signing and notarization are configured, with no certificates stored in the repo. See [docs/installers.md](docs/installers.md).
 
 The app runs as the current user. It does not need root or an administrator account.
 
