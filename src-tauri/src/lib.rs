@@ -18,6 +18,21 @@ use tauri::{Emitter, Manager, RunEvent};
 
 use crate::state::{restore_window, AppState};
 
+fn install_brand_icon(app: &tauri::App) {
+    // Official Unit Agent mark: public/unit_agent.png, also shipped as favicon.ico.
+    let bytes = include_bytes!("../icons/icon.png");
+    match tauri::image::Image::from_bytes(bytes) {
+        Ok(icon) => {
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(err) = window.set_icon(icon) {
+                    log::warn!("could not set the Unit Agent window icon: {err}");
+                }
+            }
+        }
+        Err(err) => log::warn!("could not decode the Unit Agent icon: {err}"),
+    }
+}
+
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .format_timestamp_millis()
@@ -25,6 +40,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(|app| {
+            install_brand_icon(app);
             let state = AppState::initialize(app.handle().clone());
             restore_window(app, &state.storage.settings());
             let connection = state.connection.clone();

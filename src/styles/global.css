@@ -51,6 +51,14 @@ textarea:focus-visible {
 
 .lights { display: flex; gap: 8px; align-items: center; }
 
+.app-mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: block;
+  pointer-events: none;
+}
+
 .light {
   width: 12px;
   height: 12px;

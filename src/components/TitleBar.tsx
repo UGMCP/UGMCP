@@ -52,6 +52,7 @@ export function TitleBar({
           <span>+</span>
         </button>
       </div>
+      <img className="app-mark" src="/unit_agent.svg" alt="" />
       {desktop ? (
         <div className={`status ${statusClass(connection.state)}`} title={connection.detail}>
           <i />
