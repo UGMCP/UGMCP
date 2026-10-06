@@ -17,7 +17,7 @@ pub struct LocalAgentService;
 
 impl LocalAgentService {
     pub fn status() -> AgentStatus {
-        let shell = detect_shell(None).unwrap_or_else(|_| "/bin/sh".into());
+        let shell = detect_shell(None).unwrap_or_else(|_| "unavailable".into());
         AgentStatus {
             name: "local".into(),
             available: true,

@@ -37,17 +37,29 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage", "rpm"],
+    "targets": "all",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.png",
+      "icons/icon.icns",
       "icons/icon.ico"
     ],
     "category": "Development",
-    "shortDescription": "Local-first Linux workspace for terminals and Prysel",
-    "longDescription": "Unit Agent is a local-first Linux desktop environment for real terminal sessions, with optional Prysel authentication when the network is available.",
+    "shortDescription": "Local-first workspace for terminals and Prysel",
+    "longDescription": "Unit Agent is a local-first desktop environment for real terminal sessions on macOS, Windows, and Linux, with optional Prysel authentication when the network is available.",
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
     "linux": {
       "deb": {
         "depends": []

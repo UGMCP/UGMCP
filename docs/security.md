@@ -4,7 +4,7 @@ Unit Agent can run programs as the current user. The local machine stays under t
 
 ## Command execution
 
-Only keystrokes and pastes from the desktop UI are written to a PTY. Prysel responses and MCP tool results are never piped into a shell.
+Only keystrokes and pastes from the desktop UI, or an authenticated request to the headless server, are written to a PTY. Prysel responses and MCP tool results are never piped into a shell.
 
 Before a newline is forwarded, the current input line is checked for a short list of destructive patterns:
 
@@ -32,12 +32,16 @@ The browser flow uses the system browser and a loopback callback bound to `127.0
 
 The token exchange returns a user profile, not an access token or refresh token. Unit Agent stores that profile:
 
-1. In the desktop Secret Service when it answers within 1.5 seconds.
-2. Otherwise in `session.bin`, encrypted with AES-256-GCM. The key is derived from `/etc/machine-id` and the user id. The file mode is `0600`.
+1. In the OS secret store when it answers within 1.5 seconds (Secret Service, macOS Keychain, or Windows Credential Manager).
+2. Otherwise in `session.bin`, encrypted with AES-256-GCM. The key is derived from a machine id and the user id. Linux uses `/etc/machine-id` (or `/var/lib/dbus/machine-id`) and the uid. macOS uses the platform UUID and the uid. Windows uses `MachineGuid` and `USERNAME`. On Unix the file mode is `0600`. On Windows the file stays in the per-user profile.
 
 Logout deletes both copies. Passwords are never stored.
 
 A restored profile is a local session. It is not described as an online authentication until the user completes the browser flow again in this process.
+
+## Headless server
+
+`unit-agent-server` binds to loopback unless `UNIT_AGENT_BIND` or `--bind` says otherwise. A non-loopback address is refused until `UNIT_AGENT_SERVER_TOKEN` is set. When a token is set, every route except `GET /health` requires `Authorization: Bearer`. The comparison covers the whole token. The server does not send a CORS header. Terminal input still passes through the destructive-command guard, and a held command runs only after `POST .../confirm` with `approve: true`.
 
 ## Network
 

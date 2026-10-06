@@ -12,7 +12,12 @@ export function initials(name: string): string {
 }
 
 export function shortPath(path: string): string {
-  return path.replace(/^\/home\/[^/]+/, "~").replace(/^\/root\b/, "~");
+  return path
+    .replace(/^\/home\/[^/]+/, "~")
+    .replace(/^\/Users\/[^/]+/, "~")
+    .replace(/^\/root\b/, "~")
+    .replace(/^[A-Za-z]:\\Users\\[^\\]+/i, "~")
+    .replace(/^[A-Za-z]:\/Users\/[^/]+/i, "~");
 }
 
 export function statusLabel(state: string): string {
@@ -48,9 +53,16 @@ export function osc7Path(payload: string): string | null {
   const after = payload.includes("://") ? payload.split("://")[1] : payload;
   const slash = after.indexOf("/");
   if (slash < 0) return null;
+  let path: string;
   try {
-    return decodeURIComponent(after.slice(slash));
+    path = decodeURIComponent(after.slice(slash));
   } catch {
-    return after.slice(slash);
+    path = after.slice(slash);
   }
+  const drive = path.match(/^\/([A-Za-z]:)(\/.*)?$/);
+  if (drive) {
+    const rest = (drive[2] ?? "").replaceAll("/", "\\");
+    return `${drive[1]}${rest}`;
+  }
+  return path;
 }

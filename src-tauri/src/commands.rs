@@ -47,6 +47,9 @@ pub struct AgentSnapshot {
 pub struct AppInfo {
     pub name: &'static str,
     pub version: &'static str,
+    pub platform: &'static str,
+    pub arch: &'static str,
+    pub mode: &'static str,
     pub config: PublicConfig,
     pub shortcuts: Vec<Shortcut>,
 }
@@ -261,6 +264,9 @@ pub fn app_info(state: State<'_, AppState>) -> AppInfo {
     AppInfo {
         name: "Unit Agent",
         version: env!("CARGO_PKG_VERSION"),
+        platform: std::env::consts::OS,
+        arch: std::env::consts::ARCH,
+        mode: "desktop",
         config: PublicConfig::from(&state.config),
         shortcuts: vec![
             Shortcut {

@@ -6,11 +6,14 @@ mod connection;
 mod error;
 mod mcp;
 mod safety;
+mod server;
 mod state;
 mod storage;
 mod system;
 mod terminal;
 mod util;
+
+pub use server::serve;
 
 use std::time::Duration;
 

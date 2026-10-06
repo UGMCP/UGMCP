@@ -218,7 +218,7 @@ export function ServicesPanel({ connection, settings, onClose, onSettings, onErr
         </ul>
         {info ? (
           <p>
-            {info.name} {info.version}. Auth {info.config.authUrl}. Redirect {info.config.redirectUri}.
+            {info.name} {info.version} on {info.platform}. Auth {info.config.authUrl}. Redirect {info.config.redirectUri}.
           </p>
         ) : null}
       </aside>

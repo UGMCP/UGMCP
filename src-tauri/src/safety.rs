@@ -12,6 +12,7 @@ pub fn is_dangerous(command: &str) -> bool {
         || power_command(&normalized)
         || package_removal(&normalized)
         || recursive_force_remove(&normalized)
+        || windows_destroy(&normalized)
 }
 
 fn normalize(command: &str) -> String {
@@ -116,6 +117,9 @@ fn disk_destroy(line: &str) -> bool {
     if cmd == "shred" && line.contains("/dev/") {
         return true;
     }
+    if line.starts_with("diskutil erasedisk") || line.starts_with("diskutil erasevolume") {
+        return true;
+    }
     if (line.contains("> /dev/sd") || line.contains("> /dev/nvme") || line.contains("> /dev/mmc"))
         && !line.starts_with("echo ")
     {
@@ -204,6 +208,66 @@ fn dangerous_rm_path(path: &str) -> bool {
             | "/opt/*"
             | "/root"
             | "/root/*"
+    )
+}
+
+fn windows_destroy(line: &str) -> bool {
+    if line.starts_with("stop-computer")
+        || line.starts_with("restart-computer")
+        || line.starts_with("format-volume")
+        || line.starts_with("clear-disk")
+    {
+        return true;
+    }
+    if line.starts_with("format ") {
+        let rest = line.trim_start_matches("format ").trim_start();
+        let token = rest.split_whitespace().next().unwrap_or("");
+        if token.len() >= 2
+            && token.as_bytes()[1] == b':'
+            && token.as_bytes()[0].is_ascii_alphabetic()
+        {
+            return true;
+        }
+    }
+    remove_item_root(line)
+}
+
+fn remove_item_root(line: &str) -> bool {
+    let (cmd, rest) = line.split_once(' ').unwrap_or((line, ""));
+    if !matches!(cmd, "remove-item" | "ri" | "del" | "erase" | "rmdir" | "rd") {
+        return false;
+    }
+    let recursive =
+        rest.contains("-recurse") || rest.contains("/s") || matches!(cmd, "rmdir" | "rd");
+    let force = rest.contains("-force")
+        || rest.contains("/f")
+        || rest.contains("/q")
+        || matches!(cmd, "del" | "erase");
+    if !recursive || !force {
+        return false;
+    }
+    rest.split_whitespace().any(dangerous_windows_path)
+}
+
+fn dangerous_windows_path(token: &str) -> bool {
+    let token = token.trim_matches('"').trim_matches('\'');
+    matches!(
+        token,
+        "c:\\"
+            | "c:/"
+            | "c:\\*"
+            | "c:/*"
+            | "\\"
+            | "/"
+            | "~"
+            | "~\\"
+            | "~/"
+            | "$env:userprofile"
+            | "$env:systemroot"
+            | "c:\\windows"
+            | "c:/windows"
+            | "c:\\users"
+            | "c:/users"
     )
 }
 
@@ -366,6 +430,20 @@ mod tests {
         assert!(is_dangerous("apt purge vim"));
         assert!(is_dangerous(":(){ :|:& };:"));
         assert!(is_dangerous("chmod -R 777 /"));
+        assert!(is_dangerous("diskutil eraseDisk APFS Disk disk0"));
+    }
+
+    #[test]
+    fn flags_windows_disk_and_removal() {
+        assert!(is_dangerous("Stop-Computer -Force"));
+        assert!(is_dangerous("Restart-Computer"));
+        assert!(is_dangerous("Format C:"));
+        assert!(is_dangerous("Format-Volume -DriveLetter C"));
+        assert!(is_dangerous(r"Remove-Item -Recurse -Force C:\"));
+        assert!(is_dangerous(r"del /f /s C:\Windows"));
+        assert!(!is_dangerous(r"Remove-Item .\notes.txt"));
+        assert!(!is_dangerous(r"del report.txt"));
+        assert!(!is_dangerous("echo Format C:"));
     }
 
     #[test]

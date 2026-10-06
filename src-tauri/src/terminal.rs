@@ -241,7 +241,7 @@ impl TerminalManager {
             sessions
                 .get(id)
                 .cloned()
-                .ok_or_else(|| AppError::terminal("Terminal session not found."))?
+                .ok_or_else(|| AppError::not_found("Terminal session not found."))?
         };
         if !force && session.running.load(Ordering::SeqCst) {
             if let Some(pid) = lock(&session.child).process_id() {
@@ -312,7 +312,7 @@ impl TerminalManager {
         lock(&self.sessions)
             .get(id)
             .cloned()
-            .ok_or_else(|| AppError::terminal("Terminal session not found."))
+            .ok_or_else(|| AppError::not_found("Terminal session not found."))
     }
 
     fn emit(&self, event: TerminalEvent) {
@@ -357,6 +357,7 @@ fn write_all(session: &Session, data: &str) -> Result<(), AppError> {
 
 fn stop_session(session: &Session) {
     session.running.store(false, Ordering::SeqCst);
+    #[cfg(unix)]
     if let Some(pid) = lock(&session.child).process_id() {
         unsafe {
             libc::kill(pid as i32, libc::SIGHUP);
@@ -465,12 +466,22 @@ fn extract_osc7(data: &str) -> Option<String> {
     let payload = &rest[..end];
     let after_scheme = payload.split("://").nth(1)?;
     let path = after_scheme.find('/').map(|index| &after_scheme[index..])?;
-    let decoded = percent_decode(path);
-    if decoded.starts_with('/') {
-        Some(decoded)
-    } else {
-        None
+    normalize_osc_path(&percent_decode(path))
+}
+
+fn normalize_osc_path(decoded: &str) -> Option<String> {
+    if !decoded.starts_with('/') {
+        return None;
     }
+    #[cfg(windows)]
+    {
+        let bytes = decoded.as_bytes();
+        if bytes.len() >= 3 && bytes[1].is_ascii_alphabetic() && bytes[2] == b':' {
+            let rest = decoded[3..].replace('/', "\\");
+            return Some(format!("{}:{rest}", decoded[1..2].to_ascii_uppercase()));
+        }
+    }
+    Some(decoded.to_string())
 }
 
 fn percent_decode(input: &str) -> String {
@@ -495,13 +506,7 @@ fn percent_decode(input: &str) -> String {
 
 fn resolve_cwd(requested: Option<&str>) -> String {
     if let Some(cwd) = requested.map(str::trim).filter(|s| !s.is_empty()) {
-        let expanded = if let Some(rest) = cwd.strip_prefix("~/") {
-            format!("{}/{rest}", home_dir().trim_end_matches('/'))
-        } else if cwd == "~" {
-            home_dir()
-        } else {
-            cwd.to_string()
-        };
+        let expanded = expand_home(cwd);
         if Path::new(&expanded).is_dir() {
             return expanded;
         }
@@ -510,8 +515,19 @@ fn resolve_cwd(requested: Option<&str>) -> String {
     if Path::new(&home).is_dir() {
         home
     } else {
-        "/tmp".into()
+        std::env::temp_dir().to_string_lossy().into_owned()
     }
+}
+
+fn expand_home(cwd: &str) -> String {
+    let home = home_dir();
+    if cwd == "~" {
+        return home;
+    }
+    if let Some(rest) = cwd.strip_prefix("~/").or_else(|| cwd.strip_prefix("~\\")) {
+        return Path::new(&home).join(rest).to_string_lossy().into_owned();
+    }
+    cwd.to_string()
 }
 
 fn prepare_command(
@@ -519,7 +535,7 @@ fn prepare_command(
     id: &str,
     cwd: &str,
 ) -> Result<(CommandBuilder, PathBuf), AppError> {
-    let scratch = PathBuf::from(format!("/tmp/unit-agent-{id}"));
+    let scratch = std::env::temp_dir().join(format!("unit-agent-{id}"));
     fs::create_dir_all(&scratch).map_err(|err| AppError::terminal(err.to_string()))?;
     let mut cmd = CommandBuilder::new(shell);
     cmd.cwd(cwd);
@@ -548,7 +564,18 @@ fn prepare_command(
             cmd.arg("-C");
             cmd.arg(FISH_INIT);
         }
+        "powershell" => {
+            cmd.arg("-NoLogo");
+            cmd.arg("-NoExit");
+            cmd.arg("-Command");
+            cmd.arg(POWERSHELL_INIT);
+        }
+        "cmd" => {
+            cmd.arg("/Q");
+            cmd.arg("/K");
+        }
         _ => {
+            #[cfg(unix)]
             cmd.arg("-i");
         }
     }
@@ -578,6 +605,16 @@ add-zsh-hook precmd __unit_agent_cwd 2>/dev/null
 
 const FISH_INIT: &str = r#"function __unit_agent_cwd --on-variable PWD; printf '\033]7;file://%s%s\a' (hostname) "$PWD"; end"#;
 
+const POWERSHELL_INIT: &str = r#"
+function global:prompt {
+  $path = (Get-Location).Path -replace '\\','/'
+  if ($path -match '^[A-Za-z]:') { $uri = "file://localhost/$path" } else { $uri = "file://localhost$path" }
+  $esc = [char]27
+  Write-Host -NoNewline ($esc + ']7;' + $uri + [char]7)
+  'PS ' + (Get-Location).Path + '> '
+}
+"#;
+
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
@@ -592,6 +629,19 @@ mod tests {
                 return output;
             }
             std::thread::sleep(Duration::from_millis(40));
+        }
+    }
+
+    #[test]
+    fn osc7_extracts_unix_and_windows_paths() {
+        let unix = "\u{1b}]7;file://host/home/ubuntu\u{7}";
+        assert_eq!(extract_osc7(unix).as_deref(), Some("/home/ubuntu"));
+        let win = "\u{1b}]7;file://localhost/C:/Users/ada\u{7}";
+        let path = extract_osc7(win).unwrap();
+        if cfg!(windows) {
+            assert_eq!(path, "C:\\Users\\ada");
+        } else {
+            assert_eq!(path, "/C:/Users/ada");
         }
     }
 

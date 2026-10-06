@@ -11,7 +11,7 @@ Unit Agent is a Tauri 2 desktop application. The React UI renders the workspace.
        Local environment              Prysel cloud
               |                             |
               v                             v
-       Linux shell / PTY              auth.prysel.com
+       Local shell / PTY              auth.prysel.com
        Local files                    SSO /api/sso/*
        MCP stdio servers              optional agent URL
 ```
@@ -37,6 +37,7 @@ Dark is the default. Light mode is stored in settings and mirrored to `localStor
 ```
 src-tauri/src
 ├── lib.rs            window, command registration, connectivity loop
+├── server.rs         headless HTTP server (unit-agent-server)
 ├── commands.rs       Tauri IPC
 ├── terminal.rs       PTY sessions
 ├── auth.rs           Prysel SSO desktop adapter
@@ -55,15 +56,21 @@ xterm.js onData / resize
     → Tauri command
     → TerminalManager
     → portable-pty
-    → detected shell ($SHELL, then bash, zsh, sh)
-    → Linux
+    → detected shell
+        macOS and Linux: $SHELL, then bash, zsh, sh
+        Windows: PowerShell, then cmd.exe
+    → this computer
 ```
 
 Output is read on a thread and emitted as `terminal-event`. The webview writes those bytes into xterm and does not keep a second copy in React state. Each workspace is a separate child process. Closing one session does not signal the others.
 
-Bash and zsh are started with a small rc file that sources the user's own rc and reports the working directory with OSC 7. The frontend and the backend both record that path.
+Bash, zsh, and fish are started with a small rc that sources the user's own rc and reports the working directory with OSC 7. PowerShell sets the same OSC 7 sequence from its prompt. `cmd.exe` is started with `/Q /K`. The frontend and the backend both record that path.
 
-On startup, shells left behind by a crashed Unit Agent (parent pid 1 and `UNIT_AGENT=1` in the environment) receive SIGHUP. A normal exit kills the process groups Unit Agent still tracks.
+On Linux, shells left behind by a crashed Unit Agent (parent pid 1 and `UNIT_AGENT=1` in the environment) receive SIGHUP. macOS and Windows do not scan another process's environment, so only shells Unit Agent still tracks are stopped. A normal exit hangs up those shells on Unix and kills them on every platform.
+
+### Server
+
+`unit-agent-server` (and `unit-agent serve`) runs `TerminalManager` without a window. It listens on `127.0.0.1:47822` and exposes `/health` plus `/api/v1/terminals`. Writes go through the same line guard as the desktop. Binding a non-loopback address requires `UNIT_AGENT_SERVER_TOKEN`.
 
 ### Online path
 
@@ -98,7 +105,7 @@ AuthService
 
 ## Persistence
 
-Non-secret settings (theme, font size, window geometry, workspace ids and directories, MCP command lines) are JSON in the XDG config directory.
+Non-secret settings (theme, font size, window geometry, workspace ids and directories, MCP command lines) are JSON in the OS config directory.
 
 The session record is the profile returned by the token exchange plus an expiry. There is no refresh token in the SSO response, so expiry means the user signs in again. A restored session is labeled `local` until a sign-in completes in the current process. A fresh sign-in is labeled `online`.
 

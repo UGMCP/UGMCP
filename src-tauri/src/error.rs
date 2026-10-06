@@ -50,6 +50,10 @@ impl AppError {
     pub fn shell(message: impl Into<String>) -> Self {
         Self::new("SHELL_UNAVAILABLE", message)
     }
+
+    pub fn not_found(message: impl Into<String>) -> Self {
+        Self::new("NOT_FOUND", message)
+    }
 }
 
 impl std::fmt::Display for AppError {

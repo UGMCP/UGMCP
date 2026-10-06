@@ -8,7 +8,6 @@ src-tauri/gen/
 *.log
 .DS_Store
 /tmp/
-src-tauri/icons/*.icns
 .idea/
 .vscode/
 *.swp

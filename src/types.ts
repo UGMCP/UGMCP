@@ -116,6 +116,9 @@ export interface AgentStatus {
 export interface AppInfo {
   name: string;
   version: string;
+  platform: string;
+  arch: string;
+  mode: string;
   config: {
     authUrl: string;
     apiUrl: string;

@@ -106,8 +106,8 @@ function Shell() {
             <aside className="panel" role="dialog" aria-label="About Unit Agent">
               <h2>About Unit Agent</h2>
               <p>
-                {about?.name ?? "Unit Agent"} {about?.version ?? "0.1.0"} is a local-first Linux workspace. Terminal
-                sessions run on this computer. Prysel authentication is optional and uses auth.prysel.com.
+                {about?.name ?? "Unit Agent"} {about?.version ?? "0.1.0"} runs on {about?.platform ?? "this computer"}.
+                Terminal sessions stay on this machine. Prysel authentication is optional and uses auth.prysel.com.
               </p>
               <p>License: Proprietary — Prysel. All rights reserved.</p>
               {about ? (

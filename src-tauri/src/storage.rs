@@ -1,7 +1,6 @@
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use aes_gcm::aead::{Aead, KeyInit};
@@ -348,19 +347,24 @@ fn read_settings(path: &PathBuf) -> Result<Settings, AppError> {
 fn atomic_write(path: &PathBuf, bytes: &[u8]) -> Result<(), AppError> {
     let tmp = path.with_extension("tmp");
     {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(&tmp)
-            .map_err(|err| AppError::storage(err.to_string()))?;
+        let mut file = open_private(&tmp).map_err(|err| AppError::storage(err.to_string()))?;
         file.write_all(bytes)
             .map_err(|err| AppError::storage(err.to_string()))?;
         file.sync_all().ok();
     }
     fs::rename(&tmp, path).map_err(|err| AppError::storage(err.to_string()))?;
     Ok(())
+}
+
+fn open_private(path: &Path) -> Result<File, std::io::Error> {
+    let mut opts = OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    opts.open(path)
 }
 
 fn keyring_set(secret: &str) -> Result<(), ()> {
@@ -405,18 +409,126 @@ fn keyring_delete() -> Result<(), ()> {
 }
 
 fn machine_key() -> [u8; 32] {
-    let machine = fs::read_to_string("/etc/machine-id")
-        .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
-        .unwrap_or_else(|_| "unit-agent-machine".into());
-    let uid = unsafe { libc::geteuid() };
     let mut hasher = Sha256::new();
-    hasher.update(machine.trim().as_bytes());
+    hasher.update(machine_identity().trim().as_bytes());
     hasher.update(b"|unit-agent-session-v1|");
-    hasher.update(uid.to_string().as_bytes());
+    hasher.update(user_identity().as_bytes());
     let digest = hasher.finalize();
     let mut key = [0u8; 32];
     key.copy_from_slice(&digest);
     key
+}
+
+fn machine_identity() -> String {
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(id) =
+            read_trimmed("/etc/machine-id").or_else(|| read_trimmed("/var/lib/dbus/machine-id"))
+        {
+            return id;
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(id) = macos_platform_uuid() {
+            return id;
+        }
+    }
+    #[cfg(windows)]
+    {
+        if let Some(id) = windows_machine_guid() {
+            return id;
+        }
+    }
+    std::env::var("COMPUTERNAME")
+        .or_else(|_| std::env::var("HOSTNAME"))
+        .unwrap_or_else(|_| "unit-agent-machine".into())
+}
+
+fn read_trimmed(path: &str) -> Option<String> {
+    let text = fs::read_to_string(path).ok()?;
+    let text = text.trim().to_string();
+    if text.is_empty() {
+        None
+    } else {
+        Some(text)
+    }
+}
+
+fn user_identity() -> String {
+    #[cfg(unix)]
+    {
+        unsafe { libc::geteuid().to_string() }
+    }
+    #[cfg(windows)]
+    {
+        std::env::var("USERNAME").unwrap_or_else(|_| "user".into())
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        "user".into()
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn macos_platform_uuid() -> Option<String> {
+    use std::sync::OnceLock;
+    static CACHED: OnceLock<Option<String>> = OnceLock::new();
+    CACHED
+        .get_or_init(|| {
+            let output = std::process::Command::new("/usr/sbin/ioreg")
+                .args(["-rd1", "-c", "IOPlatformExpertDevice"])
+                .output()
+                .ok()?;
+            let text = String::from_utf8_lossy(&output.stdout);
+            for line in text.lines() {
+                let Some(rest) = line.split("IOPlatformUUID").nth(1) else {
+                    continue;
+                };
+                let Some(start) = rest.find('"') else {
+                    continue;
+                };
+                let after = &rest[start + 1..];
+                let Some(end) = after.find('"') else {
+                    continue;
+                };
+                let uuid = after[..end].trim().to_string();
+                if !uuid.is_empty() {
+                    return Some(uuid);
+                }
+            }
+            None
+        })
+        .clone()
+}
+
+#[cfg(windows)]
+fn windows_machine_guid() -> Option<String> {
+    use std::sync::OnceLock;
+    static CACHED: OnceLock<Option<String>> = OnceLock::new();
+    CACHED
+        .get_or_init(|| {
+            let output = std::process::Command::new("reg")
+                .args([
+                    "query",
+                    r"HKLM\SOFTWARE\Microsoft\Cryptography",
+                    "/v",
+                    "MachineGuid",
+                ])
+                .output()
+                .ok()?;
+            let text = String::from_utf8_lossy(&output.stdout);
+            for line in text.lines() {
+                if line.contains("MachineGuid") {
+                    let guid = line.split_whitespace().last()?.to_string();
+                    if !guid.is_empty() && guid != "MachineGuid" {
+                        return Some(guid);
+                    }
+                }
+            }
+            std::env::var("COMPUTERNAME").ok()
+        })
+        .clone()
 }
 
 fn encrypt(plain: &[u8]) -> Result<Vec<u8>, String> {

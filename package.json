@@ -2,7 +2,7 @@
   "name": "unit-agent",
   "private": true,
   "version": "0.1.0",
-  "description": "Unit Agent — local-first Linux desktop workspace with real terminals and Prysel authentication.",
+  "description": "Unit Agent — local-first desktop workspace for macOS, Windows, and Linux, with a headless server and Prysel authentication.",
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
@@ -16,7 +16,8 @@
     "lint": "tsc --noEmit",
     "fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "fmt:check": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
-    "clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings"
+    "clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "serve": "cargo run --manifest-path src-tauri/Cargo.toml --bin unit-agent-server --"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",
