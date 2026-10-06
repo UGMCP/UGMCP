@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.vite/
+src-tauri/target/
+src-tauri/gen/
+.env
+.env.local
+*.log
+.DS_Store
+/tmp/
+src-tauri/icons/*.icns
+src-tauri/icons/*.ico
+.idea/
+.vscode/
+*.swp
+unit-agent-session.bin

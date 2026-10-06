@@ -1,0 +1,31 @@
+[[permission]]
+identifier = "unit-agent-commands"
+description = "Commands used by the Unit Agent desktop shell"
+commands.allow = [
+  "session_restore",
+  "auth_login",
+  "auth_cancel",
+  "auth_logout",
+  "connection_snapshot",
+  "connection_refresh",
+  "terminal_create",
+  "terminal_write",
+  "terminal_resize",
+  "terminal_close",
+  "terminal_restart",
+  "terminal_list",
+  "terminal_snapshot",
+  "terminal_confirm",
+  "terminal_set_cwd",
+  "settings_get",
+  "settings_update",
+  "mcp_list",
+  "mcp_connect",
+  "mcp_start",
+  "mcp_disconnect",
+  "mcp_forget",
+  "mcp_call_tool",
+  "app_info",
+  "debug_info",
+  "agent_status",
+]
