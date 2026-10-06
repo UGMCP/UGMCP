@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000px" height="1000px" viewBox="0 0 1000 1000" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>unit_agent</title>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#262626" offset="0%"></stop>
+            <stop stop-color="#000000" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+        <rect id="path-2" x="0" y="0" width="1000" height="1000"></rect>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Rectangle">
+            <use fill="#4660AD" xlink:href="#path-2"></use>
+            <use fill="url(#linearGradient-1)" xlink:href="#path-2"></use>
+        </g>
+        <g id="Group-3" transform="translate(137, 444)" fill="#FFFFFF" opacity="0.463601249">
+            <rect id="Rectangle" x="589" y="337" width="136" height="34" rx="9"></rect>
+            <rect id="Rectangle" x="505" y="168" width="220" height="34" rx="9"></rect>
+            <rect id="Rectangle" x="369" y="0" width="356" height="34" rx="9"></rect>
+            <rect id="Rectangle" x="0" y="168" width="442" height="34" rx="9"></rect>
+            <rect id="Rectangle" x="231" y="337" width="296" height="34" rx="9"></rect>
+            <rect id="Rectangle" x="0" y="337" width="168" height="34" rx="9"></rect>
+        </g>
+        <g id="Group-2" transform="translate(165, 223)" fill="#FFFFFF">
+            <polygon id="Rectangle" points="0 0 251 138.762352 251 196 0 73.6288966"></polygon>
+            <polygon id="Rectangle" transform="translate(125.5, 235) scale(1, -1) translate(-125.5, -235)" points="0 137 251 275.762352 251 333 0 210.628897"></polygon>
+        </g>
+    </g>
+</svg>
