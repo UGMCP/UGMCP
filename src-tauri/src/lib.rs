@@ -86,6 +86,7 @@ pub fn run() {
             commands::app_info,
             commands::debug_info,
             commands::agent_status,
+            commands::host_identity,
         ])
         .build(tauri::generate_context!())
         .expect("failed to start Unit Agent")

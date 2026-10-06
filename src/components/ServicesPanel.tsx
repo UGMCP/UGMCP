@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, asAppError } from "../services/api";
+import { usePresence } from "../utils/usePresence";
 import type { AgentStatus, AppInfo, ConnectionSnapshot, McpServerInfo, Settings } from "../types";
 
 interface Props {
@@ -19,6 +20,7 @@ export function ServicesPanel({ connection, settings, onClose, onSettings, onErr
   const [args, setArgs] = useState("");
   const [envText, setEnvText] = useState("");
   const [pendingTool, setPendingTool] = useState<{ serverId: string; name: string; args: string; danger: string | null } | null>(null);
+  const presence = usePresence(connection.state);
 
   async function refresh() {
     const [list, agent, about] = await Promise.all([api.mcpList(), api.agentStatus(), api.appInfo()]);
@@ -69,6 +71,7 @@ export function ServicesPanel({ connection, settings, onClose, onSettings, onErr
           <span>State</span>
           <strong>{connection.state.toLowerCase()}</strong>
         </div>
+        <p className="presence">{presence}</p>
         <p>{connection.detail}</p>
         <button className="text-btn" onClick={() => void api.connectionRefresh()}>
           Check connection

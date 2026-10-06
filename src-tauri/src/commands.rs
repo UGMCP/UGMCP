@@ -11,7 +11,7 @@ use crate::error::AppError;
 use crate::mcp::McpServerInfo;
 use crate::state::AppState;
 use crate::storage::{Settings, SettingsPatch};
-use crate::system::detect_shell;
+use crate::system::{detect_shell, HostIdentity};
 use crate::terminal::{CreateTerminalRequest, TerminalInfo, TerminalSnapshot, WriteResult};
 
 #[derive(Deserialize)]
@@ -299,6 +299,11 @@ pub fn app_info(state: State<'_, AppState>) -> AppInfo {
             },
         ],
     }
+}
+
+#[tauri::command]
+pub fn host_identity() -> HostIdentity {
+    crate::system::host_identity()
 }
 
 #[tauri::command]

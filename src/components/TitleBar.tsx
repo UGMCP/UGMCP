@@ -1,6 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { MouseEvent } from "react";
-import { displayName, initials, statusClass, statusLabel } from "../utils/format";
+import { displayName, initials, statusClass } from "../utils/format";
+import { usePresence } from "../utils/usePresence";
 import type { ConnectionSnapshot, SessionView, ThemeName } from "../types";
 
 interface Props {
@@ -34,6 +35,7 @@ export function TitleBar({
 
   const name = displayName(session.user);
   const showAccount = session.authenticated && session.user;
+  const presence = usePresence(connection.state);
 
   return (
     <header
@@ -54,9 +56,9 @@ export function TitleBar({
       </div>
       <img className="app-mark" src="/unit_agent.svg" alt="" />
       {desktop ? (
-        <div className={`status ${statusClass(connection.state)}`} title={connection.detail}>
+        <div className={`status ${statusClass(connection.state)}`} title={`${presence}. ${connection.detail}`}>
           <i />
-          {statusLabel(connection.state)}
+          <span>{presence}</span>
         </div>
       ) : null}
       <div className="title-spacer" data-tauri-drag-region />

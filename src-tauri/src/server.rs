@@ -10,7 +10,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::error::AppError;
-use crate::system::detect_shell;
+use crate::system::{detect_shell, host_identity};
 use crate::terminal::{CreateTerminalRequest, TerminalManager};
 
 const DEFAULT_BIND: &str = "127.0.0.1:47822";
@@ -505,6 +505,7 @@ fn query_flag(query: &str, name: &str) -> bool {
 }
 
 fn status_body() -> StatusBody {
+    let host = host_identity();
     StatusBody {
         name: "Unit Agent",
         version: env!("CARGO_PKG_VERSION"),
@@ -512,6 +513,9 @@ fn status_body() -> StatusBody {
         platform: std::env::consts::OS,
         arch: std::env::consts::ARCH,
         shell: detect_shell(None).unwrap_or_else(|_| "unavailable".into()),
+        computer_name: host.computer_name,
+        server_name: host.server_name,
+        network: host.network,
     }
 }
 
@@ -524,6 +528,9 @@ struct StatusBody {
     platform: &'static str,
     arch: &'static str,
     shell: String,
+    computer_name: String,
+    server_name: String,
+    network: String,
 }
 
 fn create_terminal(

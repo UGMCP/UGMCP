@@ -35,6 +35,42 @@ export function statusLabel(state: string): string {
   }
 }
 
+export function presenceLine(input: {
+  time: string;
+  date: string;
+  network: string;
+  computerName: string;
+  serverName: string;
+  state: string;
+}): string {
+  const computer = input.computerName.trim() || "This computer";
+  const server = input.serverName.trim() || computer;
+  const verb =
+    input.state === "ONLINE" || input.state === "DEGRADED"
+      ? "is online"
+      : input.state === "OFFLINE" || input.state === "ERROR"
+        ? "is offline"
+        : "is connecting";
+  return [input.time, input.date, input.network.trim(), `${computer} ${verb} ${server}`, "Prysel Unit Agents"]
+    .filter((part) => part.length > 0)
+    .join(" · ");
+}
+
+export function formatNow(now: Date): { time: string; date: string } {
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(now);
+  const date = new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(now);
+  return { time, date };
+}
+
 export function statusClass(state: string): string {
   switch (state) {
     case "ONLINE":

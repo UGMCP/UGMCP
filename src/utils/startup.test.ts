@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { osc7Path, shortPath } from "./format";
+import { osc7Path, presenceLine, shortPath } from "./format";
 import { gridColumns, resolvePhase } from "./startup";
 
 describe("resolvePhase", () => {
@@ -12,6 +12,31 @@ describe("resolvePhase", () => {
     expect(resolvePhase({ fatal: false, session: { authenticated: false, expired: false }, offlineChosen: false })).toBe("login");
     expect(resolvePhase({ fatal: false, session: { authenticated: false, expired: true }, offlineChosen: false })).toBe("expired");
     expect(resolvePhase({ fatal: true, session: { authenticated: true, expired: false }, offlineChosen: false })).toBe("fatal");
+  });
+});
+
+describe("presenceLine", () => {
+  it("replaces online with the clock, date, network, and computer", () => {
+    expect(
+      presenceLine({
+        time: "14:32:08",
+        date: "Tue 6 Oct 2026",
+        network: "eth0 10.0.2.15",
+        computerName: "ubuntu",
+        serverName: "ubuntu",
+        state: "ONLINE",
+      }),
+    ).toBe("14:32:08 · Tue 6 Oct 2026 · eth0 10.0.2.15 · ubuntu is online ubuntu · Prysel Unit Agents");
+    expect(
+      presenceLine({
+        time: "09:01:00",
+        date: "Mon 5 Oct 2026",
+        network: "",
+        computerName: "desk",
+        serverName: "desk.local",
+        state: "OFFLINE",
+      }),
+    ).toBe("09:01:00 · Mon 5 Oct 2026 · desk is offline desk.local · Prysel Unit Agents");
   });
 });
 

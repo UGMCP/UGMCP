@@ -28,4 +28,5 @@ commands.allow = [
   "app_info",
   "debug_info",
   "agent_status",
+  "host_identity",
 ]

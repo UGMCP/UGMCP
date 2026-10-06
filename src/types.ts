@@ -20,6 +20,12 @@ export interface SessionView {
   expiresAt?: number | null;
 }
 
+export interface HostIdentity {
+  computerName: string;
+  serverName: string;
+  network: string;
+}
+
 export interface ConnectionSnapshot {
   state: string;
   internet: string;

@@ -89,10 +89,17 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
+  letter-spacing: 0.01em;
   color: var(--text-faint);
+}
+
+.status span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status i {
@@ -107,7 +114,11 @@ textarea:focus-visible {
 .status.degraded, .status.error { color: var(--warn); }
 .status.connecting { color: var(--text-faint); }
 
-.title-spacer { flex: 1; }
+.title-spacer { flex: 0 0 12px; }
+
+.presence {
+  font-variant-numeric: tabular-nums;
+}
 
 .icon-btn, .text-btn {
   border: 0;

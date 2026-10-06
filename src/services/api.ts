@@ -4,6 +4,7 @@ import type {
   AppError,
   AppInfo,
   ConnectionSnapshot,
+  HostIdentity,
   DebugInfo,
   McpServerInfo,
   SessionView,
@@ -46,6 +47,7 @@ export const api = {
   authLogout: () => call<SessionView>("auth_logout"),
   connectionSnapshot: () => call<ConnectionSnapshot>("connection_snapshot"),
   connectionRefresh: () => call<ConnectionSnapshot>("connection_refresh"),
+  hostIdentity: () => call<HostIdentity>("host_identity"),
   terminalCreate: (request: { id?: string; title?: string; cwd?: string; shell?: string }) =>
     call<TerminalInfo>("terminal_create", { request }),
   terminalWrite: (id: string, data: string) => call<WriteResult>("terminal_write", { id, data }),
